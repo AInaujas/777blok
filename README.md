@@ -22,6 +22,46 @@ a certain percent.
 
 ---
 
+## Easiest: run it on GitHub (no install, PC can be off)
+
+GitHub can run the bot for you every ~5 minutes for free (this repo is public).
+Everything below happens in your web browser and Telegram.
+
+1. **Merge the pull request.** On GitHub open **Pull requests**, open the bot's pull
+   request and click **Merge pull request**, then **Confirm merge**. (GitHub only
+   runs the schedule from the `main` branch.)
+2. **Get your bot token.** In Telegram, message **@BotFather**. Send `/newbot` to make
+   a bot, or `/revoke` to get a fresh token for an existing one. Copy the token.
+   Keep it secret.
+3. **Give GitHub the token.** In your repo go to **Settings** → **Secrets and
+   variables** → **Actions** → **New repository secret**.
+   - Name: `TELEGRAM_BOT_TOKEN`
+   - Secret: paste the token → **Add secret**
+4. **Say hi to your bot.** In Telegram, open your bot, press **Start** and send it any
+   message. The bot finds your chat from this, so you don't need a chat id.
+5. **Start it.** Open the **Actions** tab → **Price alerts** → **Run workflow** →
+   **Run workflow**. About a minute later your bot sends
+   **"✅ Crypto alert bot connected!"** From then on it checks prices every ~5 minutes
+   by itself.
+6. **Choose your alerts.** On GitHub, click `config.yaml` → the ✏️ pencil icon, edit
+   the alerts (see [step 8 below](#8-set-your-alerts-in-configyaml) for the format)
+   → **Commit changes**. The next run uses them.
+
+Good to know:
+- **Checks every 5–15 minutes**, not every minute. GitHub's timer is often late.
+- **To stop it:** **Actions** tab → **Price alerts** → **⋯** → **Disable workflow**.
+- **Run logs are public** because the repo is public. They show prices and alerts,
+  never your token.
+- **GitHub pauses the schedule if nothing in the repo changes for 60 days.** It
+  emails you first, and one click on **Enable workflow** turns it back on.
+- **If you never get the "connected" message:** open the latest run on the
+  **Actions** tab and read the log. The usual fix is to message the bot again, then
+  **Run workflow** again.
+
+Prefer running it on your own PC? Follow the steps below instead.
+
+---
+
 ## Setup on Windows (step by step)
 
 ### 1. Install Python
