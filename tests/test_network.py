@@ -107,3 +107,39 @@ def test_notifier_survives_telegram_failure_and_hides_token(caplog):
     notifier = Notifier("SECRET", "999", session=session)
     assert notifier.send("hello") is False
     assert "SECRET" not in caplog.text
+
+
+def test_find_chat_id_uses_latest_message():
+    updates = {"ok": True, "result": [
+        {"message": {"chat": {"id": 111}}},
+        {"message": {"chat": {"id": 222}}},
+        {"edited_message": {"chat": {"id": 333}}},
+    ]}
+    notifier = Notifier("123:ABC", "", session=FakeSession(FakeResponse(200, updates)))
+    assert notifier.find_chat_id() == "222"
+
+
+def test_find_chat_id_handles_no_messages_and_errors():
+    empty = Notifier("123:ABC", "", session=FakeSession(FakeResponse(200, {"ok": True, "result": []})))
+    assert empty.find_chat_id() == ""
+    down = Notifier("123:ABC", "", session=FakeSession(requests.ConnectionError("x")))
+    assert down.find_chat_id() == ""
+    assert Notifier("", "").find_chat_id() == ""
+
+
+def test_connect_telegram_discovers_saves_and_reuses_chat_id(capsys):
+    from bot import connect_telegram
+    session = FakeSession(
+        FakeResponse(200, {"ok": True, "result": [{"message": {"chat": {"id": 42}}}]}),
+        FakeResponse(200, {"ok": True}),  # the "connected" message
+    )
+    state = {}
+    notifier = Notifier("123:ABC", "", session=session)
+    connect_telegram(notifier, state)
+    assert notifier.chat_id == "42" and state["chat_id"] == "42"
+    assert "connected" in session.calls[1][1]["json"]["text"]
+
+    # Next run: chat id comes from the saved state, no Telegram lookup.
+    again = Notifier("123:ABC", "", session=FakeSession())
+    connect_telegram(again, state)
+    assert again.chat_id == "42"

@@ -184,3 +184,28 @@ def test_shipped_config_yaml_is_valid():
 def test_parse_config_rejects_bad_input(data, error):
     with pytest.raises(ConfigError, match=error):
         parse_config(data)
+
+
+# --- saved state -------------------------------------------------------------
+
+def test_state_round_trip_keeps_cooldown_and_history():
+    import json
+    alerts = [Alert("bitcoin", "above", 100, cooldown_minutes=30),
+              Alert("bitcoin", "change", 5, window_minutes=10)]
+    first = AlertEngine(alerts)
+    first.check({"bitcoin": 100.5}, now=0)
+    saved = json.loads(json.dumps(first.to_dict()))  # must survive JSON
+
+    second = AlertEngine(alerts)
+    second.load_dict(saved)
+    # Cooldown from the earlier run still applies...
+    assert all("above" not in m for m in second.check({"bitcoin": 101}, now=5 * MIN))
+    # ...and the price history lets the change alert compare with the old run.
+    msgs = second.check({"bitcoin": 110}, now=10 * MIN)
+    assert len(msgs) == 1 and "+9.45%" in msgs[0]
+
+
+def test_bad_state_is_ignored():
+    engine = engine_for(Alert("bitcoin", "above", 100))
+    engine.load_dict({"history": {"bitcoin": "garbage"}, "last_fired": 5})
+    assert len(engine.check({"bitcoin": 150}, now=0)) == 1

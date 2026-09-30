@@ -26,6 +26,29 @@ class Notifier:
             return False
         return self._send_telegram(message)
 
+    def find_chat_id(self) -> str:
+        """Look up the chat of the most recent message sent to the bot.
+
+        Lets beginners skip finding their chat id by hand: just message the
+        bot once. Returns "" if there's no token or no recent message
+        (Telegram only keeps messages from the last 24 hours here).
+        """
+        if not self.bot_token:
+            return ""
+        url = f"https://api.telegram.org/bot{self.bot_token}/getUpdates"
+        try:
+            resp = self.http.get(url, timeout=15)
+            updates = resp.json().get("result", []) if resp.status_code == 200 else []
+        except (requests.RequestException, ValueError, AttributeError):
+            log.error("Could not ask Telegram for the chat id")
+            return ""
+        for update in reversed(updates):
+            for field in ("message", "channel_post", "my_chat_member"):
+                chat_id = ((update.get(field) or {}).get("chat") or {}).get("id")
+                if chat_id is not None:
+                    return str(chat_id)
+        return ""
+
     def _send_telegram(self, message: str) -> bool:
         url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
         try:

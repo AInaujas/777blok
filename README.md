@@ -85,6 +85,13 @@ Press **Ctrl+C** to stop it. Now let's hook up Telegram so alerts reach your pho
 
 ### 6. Get your chat id
 
+**Easy way:** open a chat with **your new bot** in Telegram, press **Start** and send
+it any message. Then leave `TELEGRAM_CHAT_ID` empty in step 7. The bot finds your
+chat by itself and sends you a "connected" message. (This works if you messaged the
+bot in the last 24 hours. If it doesn't find you, send it another message.)
+
+**Manual way** (if you want to fill in the chat id yourself):
+
 1. In Telegram, open a chat with **your new bot** (search its username) and press
    **Start** / send it any message like `hi`. (This step is required — bots can't
    message you until you message them first.)

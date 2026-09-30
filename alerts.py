@@ -35,6 +35,11 @@ class Alert:
             else:
                 self.name = f"{self.coin} {self.condition} {self.threshold:g}"
 
+    @property
+    def key(self) -> str:
+        """Identifies this alert in the saved state, so cooldowns survive restarts."""
+        return f"{self.coin}|{self.condition}|{self.threshold:g}|{self.direction}|{self.window_minutes:g}"
+
 
 @dataclass
 class Config:
@@ -115,7 +120,7 @@ class AlertEngine:
         self.alerts = alerts
         self.vs_currency = vs_currency
         self._history: Dict[str, deque] = defaultdict(deque)  # coin -> (time, price)
-        self._last_fired: Dict[int, float] = {}  # alert index -> time it last fired
+        self._last_fired: Dict[str, float] = {}  # alert key -> time it last fired
         longest = max([a.window_minutes for a in alerts if a.condition == "change"], default=0)
         self._keep_seconds = longest * 60
 
@@ -155,19 +160,36 @@ class AlertEngine:
         """Record prices and return a message for every alert that should fire now."""
         self.record(prices, now)
         messages = []
-        for index, alert in enumerate(self.alerts):
+        for alert in self.alerts:
             price = prices.get(alert.coin)
             if price is None:
                 continue
             message = self._evaluate(alert, price, now)
             if message is None:
                 continue
-            last = self._last_fired.get(index)
+            last = self._last_fired.get(alert.key)
             if last is not None and now - last < alert.cooldown_minutes * 60:
                 continue  # still cooling down, don't spam
-            self._last_fired[index] = now
+            self._last_fired[alert.key] = now
             messages.append(message)
         return messages
+
+    def to_dict(self) -> dict:
+        """Everything the engine remembers, as plain JSON-friendly data."""
+        return {
+            "history": {coin: [list(sample) for sample in samples] for coin, samples in self._history.items()},
+            "last_fired": dict(self._last_fired),
+        }
+
+    def load_dict(self, data: dict) -> None:
+        """Restore what to_dict() saved. Bad or missing data is simply ignored."""
+        try:
+            for coin, samples in (data.get("history") or {}).items():
+                self._history[coin] = deque((float(ts), float(price)) for ts, price in samples)
+            self._last_fired.update({str(k): float(v) for k, v in (data.get("last_fired") or {}).items()})
+        except (AttributeError, TypeError, ValueError):
+            self._history.clear()
+            self._last_fired.clear()
 
     def _evaluate(self, alert: Alert, price: float, now: float) -> Optional[str]:
         cur = self.vs_currency.upper()
