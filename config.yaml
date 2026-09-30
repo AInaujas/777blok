@@ -1,0 +1,41 @@
+# How often to check prices, in seconds (minimum 10).
+# CoinGecko's free API is rate limited, so 60 is a safe choice.
+poll_seconds: 60
+
+# Currency to compare prices in (usd, eur, gbp, ...).
+vs_currency: usd
+
+# Default wait before the same alert can be sent again (minutes).
+# Each alert can override this with its own cooldown_minutes.
+cooldown_minutes: 30
+
+# Your alerts.
+#   coin:      the CoinGecko coin id (see the README for how to find it),
+#              e.g. bitcoin, ethereum, solana, dogecoin
+#   condition: above  -> price goes above threshold
+#              below  -> price goes below threshold
+#              change -> price moves by threshold % within window_minutes
+#   threshold: a price for above/below, a percent for change (e.g. 5 = 5%)
+#   direction: (change only) up, down or any. Default: any
+#   window_minutes: (change only) how far back to compare. Default: 60
+#   name:      (optional) a friendly label shown in the alert
+alerts:
+  - coin: bitcoin
+    condition: above
+    threshold: 150000
+
+  - coin: bitcoin
+    condition: below
+    threshold: 80000
+
+  - coin: ethereum
+    condition: change
+    threshold: 5
+    window_minutes: 60
+    direction: any
+    name: ETH big move
+
+  - coin: solana
+    condition: below
+    threshold: 100
+    cooldown_minutes: 120
