@@ -7,8 +7,8 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY signalbot ./signalbot
-RUN useradd --create-home bot && mkdir -p /app/data && chown bot /app/data
-USER bot
+RUN mkdir -p /app/data
 
-VOLUME /app/data
+# No VOLUME line: hosts like Railway reject it and attach storage themselves.
+# Runs as root so a mounted volume at /app/data is always writable.
 CMD ["python", "-m", "signalbot"]
