@@ -1,12 +1,17 @@
-# 777blok — Crypto Price Alert Bot
+# 777blok — Crypto Price Alert Bots
 
-A small Python bot that watches crypto prices and **sends you alerts** on Telegram
-(and in the console window) when a price goes above or below a level, or moves by
-a certain percent.
+> **Alerts only.** These bots only *read* public prices from CoinGecko. They
+> never place trades, never connect to an exchange, and never ask for wallet or
+> exchange keys.
 
-> **Alerts only.** This bot only *reads* public prices from CoinGecko. It never
-> places trades, never connects to an exchange, and never asks for wallet or
-> exchange keys. The only secret it uses is your Telegram bot token.
+This repo has two bots:
+
+| | What it is | Where it runs | Guide |
+|---|---|---|---|
+| **signalbot** (`signalbot/`) | Public multi-user bot: anyone sets their own alerts; free plan + Pro subscription in Telegram Stars | A server, 24/7 | **[LAUNCH.md](LAUNCH.md)** |
+| **Personal bot** (`bot.py`) | Alerts from `config.yaml` sent to just you | GitHub Actions, free | This README |
+
+The rest of this README covers the personal bot.
 
 ## What's in here
 

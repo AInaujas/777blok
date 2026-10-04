@@ -1,0 +1,8 @@
+# Start:  docker compose up -d --build     Logs:  docker compose logs -f
+services:
+  signalbot:
+    build: .
+    env_file: .env
+    volumes:
+      - ./data:/app/data   # the database lives here: back it up
+    restart: unless-stopped
