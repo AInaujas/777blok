@@ -7,7 +7,7 @@ vs_currency: usd
 
 # Default wait before the same alert can be sent again (minutes).
 # Each alert can override this with its own cooldown_minutes.
-cooldown_minutes: 30
+cooldown_minutes: 240  # 4 hours, so a price sitting past a level doesn't spam you
 
 # Your alerts.
 #   coin:      the CoinGecko coin id (see the README for how to find it),
@@ -20,22 +20,52 @@ cooldown_minutes: 30
 #   window_minutes: (change only) how far back to compare. Default: 60
 #   name:      (optional) a friendly label shown in the alert
 alerts:
+  # Bitcoin
   - coin: bitcoin
     condition: above
-    threshold: 150000
-
+    threshold: 90000
+    name: BTC breakout
   - coin: bitcoin
     condition: below
     threshold: 80000
+    name: BTC dip
 
+  # Ethereum
+  - coin: ethereum
+    condition: above
+    threshold: 3000
+    name: ETH breakout
+  - coin: ethereum
+    condition: below
+    threshold: 2500
+    name: ETH dip
+
+  # Solana
+  - coin: solana
+    condition: above
+    threshold: 135
+    name: SOL breakout
+  - coin: solana
+    condition: below
+    threshold: 110
+    name: SOL dip
+
+  # Sudden moves: 5% up or down within 1 hour
+  - coin: bitcoin
+    condition: change
+    threshold: 5
+    window_minutes: 60
+    cooldown_minutes: 60
+    name: BTC big move
   - coin: ethereum
     condition: change
     threshold: 5
     window_minutes: 60
-    direction: any
+    cooldown_minutes: 60
     name: ETH big move
-
   - coin: solana
-    condition: below
-    threshold: 100
-    cooldown_minutes: 120
+    condition: change
+    threshold: 5
+    window_minutes: 60
+    cooldown_minutes: 60
+    name: SOL big move
