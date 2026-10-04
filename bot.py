@@ -52,19 +52,28 @@ def save_state(path: str, data: dict) -> None:
 
 
 def connect_telegram(notifier: Notifier, state: dict) -> None:
-    """Fill in the chat id from state, or find it from the latest message to the bot."""
-    if not notifier.bot_token or notifier.chat_id:
+    """Work out which chat to message, and say hello once per chat.
+
+    The chat id comes from TELEGRAM_CHAT_ID, else the saved state, else the
+    latest message sent to the bot. The one-time "connected" message shows
+    the setup works before any price alert fires.
+    """
+    if not notifier.bot_token:
         return
-    notifier.chat_id = str(state.get("chat_id") or "")
-    if notifier.chat_id:
-        return
-    notifier.chat_id = notifier.find_chat_id()
-    if notifier.chat_id:
-        state["chat_id"] = notifier.chat_id
-        log.info("Found your Telegram chat automatically")
-        notifier.send("✅ Crypto alert bot connected! You'll get your price alerts here.")
-    else:
-        log.warning("Telegram token is set but no chat found yet: open your bot in Telegram and send it any message")
+    if not notifier.chat_id:
+        notifier.chat_id = str(state.get("chat_id") or "")
+    if not notifier.chat_id:
+        notifier.chat_id = notifier.find_chat_id()
+        if notifier.chat_id:
+            state["chat_id"] = notifier.chat_id
+            log.info("Found your Telegram chat automatically")
+        else:
+            log.warning("Telegram token is set but no chat found yet: open your bot in Telegram and send it "
+                        "any message, or set TELEGRAM_CHAT_ID")
+            return
+    if state.get("greeted_chat") != notifier.chat_id:
+        if notifier.send("✅ Crypto alert bot connected! You'll get your price alerts here."):
+            state["greeted_chat"] = notifier.chat_id
 
 
 def main() -> int:
