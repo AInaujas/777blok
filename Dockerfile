@@ -10,5 +10,4 @@ COPY signalbot ./signalbot
 RUN useradd --create-home bot && mkdir -p /app/data && chown bot /app/data
 USER bot
 
-VOLUME /app/data
 CMD ["python", "-m", "signalbot"]
