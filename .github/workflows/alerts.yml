@@ -1,0 +1,51 @@
+# Runs the alert bot on GitHub's computers every few minutes, so nothing has
+# to run on your PC. Alerts only: it reads public prices and never trades.
+# To switch it off: Actions tab -> "Price alerts" -> "..." -> Disable workflow.
+name: Price alerts
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # every 5 minutes (GitHub often runs it a bit late)
+  workflow_dispatch:        # adds a "Run workflow" button on the Actions tab
+
+concurrency:
+  group: price-alerts
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check-prices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Remembers cooldowns, recent prices and your chat id between runs.
+      - name: Restore bot memory
+        uses: actions/cache/restore@v4
+        with:
+          path: state.json
+          key: bot-state-${{ github.run_id }}
+          restore-keys: bot-state-
+
+      - name: Check prices and send alerts
+        run: python bot.py --once --state state.json
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: Save bot memory
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state.json
+          key: bot-state-${{ github.run_id }}
