@@ -38,10 +38,15 @@ class Notifier:
         url = f"https://api.telegram.org/bot{self.bot_token}/getUpdates"
         try:
             resp = self.http.get(url, timeout=15)
-            updates = resp.json().get("result", []) if resp.status_code == 200 else []
-        except (requests.RequestException, ValueError, AttributeError):
+            data = resp.json()
+        except (requests.RequestException, ValueError):
             log.error("Could not ask Telegram for the chat id")
             return ""
+        if resp.status_code != 200 or not isinstance(data, dict):
+            detail = data.get("description", "") if isinstance(data, dict) else ""
+            log.error("Telegram refused the chat id lookup (HTTP %d) %s", resp.status_code, detail)
+            return ""
+        updates = data.get("result") or []
         for update in reversed(updates):
             for field in ("message", "channel_post", "my_chat_member"):
                 chat_id = ((update.get(field) or {}).get("chat") or {}).get("id")

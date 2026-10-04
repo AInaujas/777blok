@@ -143,3 +143,32 @@ def test_connect_telegram_discovers_saves_and_reuses_chat_id(capsys):
     again = Notifier("123:ABC", "", session=FakeSession())
     connect_telegram(again, state)
     assert again.chat_id == "42"
+
+
+def test_connect_telegram_greets_once_when_chat_id_is_set_by_hand():
+    from bot import connect_telegram
+    state = {}
+    first = FakeSession(FakeResponse(200, {"ok": True}))
+    connect_telegram(Notifier("123:ABC", "777", session=first), state)
+    assert len(first.calls) == 1 and "connected" in first.calls[0][1]["json"]["text"]
+    assert state["greeted_chat"] == "777"
+
+    later = FakeSession()
+    connect_telegram(Notifier("123:ABC", "777", session=later), state)
+    assert later.calls == []  # no repeat hello
+
+
+def test_connect_telegram_retries_hello_if_it_failed():
+    from bot import connect_telegram
+    state = {}
+    connect_telegram(Notifier("123:ABC", "777", session=FakeSession(FakeResponse(401, {"description": "Unauthorized"}))), state)
+    assert "greeted_chat" not in state
+    retry = FakeSession(FakeResponse(200, {"ok": True}))
+    connect_telegram(Notifier("123:ABC", "777", session=retry), state)
+    assert state["greeted_chat"] == "777"
+
+
+def test_find_chat_id_logs_telegram_reason(caplog):
+    session = FakeSession(FakeResponse(409, {"ok": False, "description": "Conflict: webhook is active"}))
+    assert Notifier("123:ABC", "", session=session).find_chat_id() == ""
+    assert "webhook is active" in caplog.text
